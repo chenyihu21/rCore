@@ -72,6 +72,25 @@ impl MemorySet {
             self.areas.remove(idx);
         }
     }
+
+        /// Remove the area in the range of [start_va, end_va).
+    /// return true if the area is found and removed.
+    pub fn remove_framed_area(&mut self, start_va: VirtAddr, end_va: VirtAddr) -> bool {
+        let start_vpn = start_va.floor();
+        let end_vpn = end_va.ceil();
+        for vpn in VPNRange::new(start_vpn, end_vpn) {
+            if let Some(pte) = self.page_table.translate(vpn) {
+                if pte.is_valid() {
+                    self.page_table.unmap(vpn);
+                } else {
+                    return false;
+                }
+            } else {
+                return false;
+            }
+        }
+        return true;
+    }
     /// Add a new MapArea into this MemorySet.
     /// Assuming that there are no conflicts in the virtual address
     /// space.
